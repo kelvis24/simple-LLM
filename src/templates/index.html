@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Chat Interface</title>
+    <style>
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+
+      body {
+        font-family: "Helvetica Neue", Arial, sans-serif;
+        background-color: #f4f4f4;
+        height: 100vh;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+      }
+
+      .chat-container {
+        display: flex;
+        flex-direction: column;
+        justify-content: space-between;
+        width: 75%; /* Chat container takes 75% of the page width */
+        max-width: 800px; /* Add a max-width for larger screens */
+        height: 80vh;
+        background-color: #ffffff;
+        box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+        border-radius: 8px;
+        overflow: hidden;
+      }
+
+      .chat-box {
+        padding: 20px;
+        flex-grow: 1;
+        overflow-y: auto;
+        background-color: #f9f9f9;
+      }
+
+      .chat-box .message {
+        padding: 10px;
+        margin-bottom: 10px;
+        border-radius: 8px;
+        max-width: 75%;
+      }
+
+      .chat-box .message.user {
+        background-color: #d1f5d3;
+        align-self: flex-end;
+        text-align: right;
+      }
+
+      .chat-box .message.bot {
+        background-color: #f0f0f0;
+        align-self: flex-start;
+        text-align: left;
+      }
+
+      .input-container {
+        display: flex;
+        justify-content: center; /* Center the input and button */
+        border-top: 1px solid #e0e0e0;
+        padding: 10px;
+        background-color: #ffffff;
+      }
+
+      .input-container input {
+        width: 75%; /* Set the input field to 75% of the page width */
+        padding: 15px;
+        border: none;
+        border-radius: 5px;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+        font-size: 16px;
+        outline: none;
+      }
+
+      .input-container button {
+        margin-left: 10px;
+        padding: 15px 20px;
+        background-color: #007bff;
+        color: #fff;
+        border: none;
+        border-radius: 5px;
+        font-size: 16px;
+        cursor: pointer;
+        transition: background-color 0.2s ease;
+      }
+
+      .input-container button:hover {
+        background-color: #0056b3;
+      }
+
+      /* Mobile view optimization */
+      @media screen and (max-width: 768px) {
+        .chat-container {
+          width: 90%;
+          height: 90vh;
+        }
+
+        .input-container input {
+          font-size: 14px;
+          padding: 10px;
+        }
+
+        .input-container button {
+          padding: 10px 15px;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="chat-container">
+      <div id="chatBox" class="chat-box"></div>
+
+      <div class="input-container">
+        <input
+          type="text"
+          id="userInput"
+          placeholder="Type your message here..."
+          onkeypress="if (event.key === 'Enter') sendMessage()"
+        />
+        <button onclick="sendMessage()">Send</button>
+      </div>
+    </div>
+
+    <script>
+      const chatBox = document.getElementById("chatBox");
+
+      async function sendMessage() {
+        const userInput = document.getElementById("userInput").value;
+        if (userInput) {
+          // Add user message to the chat
+          appendMessage(userInput, "user");
+          document.getElementById("userInput").value = ""; // Clear input field
+
+          // Show "Loading..." message while waiting for the response
+          appendMessage("Loading...", "bot");
+
+          // Send POST request to Flask backend
+          const response = await fetch("/get-greeting", {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({ message: userInput }),
+          });
+
+          const data = await response.json();
+          removeLoadingMessage(); // Remove the "Loading..." message
+
+          // Append bot response
+          appendMessage(data.greeting, "bot");
+        }
+      }
+
+      function appendMessage(message, sender) {
+        const messageDiv = document.createElement("div");
+        messageDiv.classList.add("message", sender);
+        messageDiv.textContent = message;
+        chatBox.appendChild(messageDiv);
+        chatBox.scrollTop = chatBox.scrollHeight; // Auto-scroll to the bottom
+      }
+
+      function removeLoadingMessage() {
+        const loadingMessage = chatBox.querySelector(".message.bot:last-child");
+        if (loadingMessage && loadingMessage.textContent === "Loading...") {
+          loadingMessage.remove();
+        }
+      }
+    </script>
+  </body>
+</html>
